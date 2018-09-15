@@ -5,8 +5,8 @@ import lejos.hardware.motor.EV3LargeRegulatedMotor;
 public class PController implements UltrasonicController {
 
   /* Constants */
-  private static final int MOTOR_SPEED = 200;
-  private static final int FILTER_OUT = 20;
+  private static final int MOTOR_SPEED = 100;
+  private static final int FILTER_OUT = 10;
 
 
   private final int bandCenter;
@@ -34,11 +34,11 @@ public class PController implements UltrasonicController {
     // could have).
     //
 	  //if (distance>2000) {}
-	   if (distance >= 255 && filterControl < FILTER_OUT) {
+	   if (distance >= 100 && filterControl < FILTER_OUT) {
       // bad value, do not set the distance var, however do increment the
       // filter value
       filterControl++;
-    } else if (distance >= 255) {
+    } else if (distance >= 100) {
       // We have repeated large values, so there must actually be nothing
       // there: leave the distance alone
       this.distance = distance;
@@ -65,13 +65,13 @@ public class PController implements UltrasonicController {
 	    else if (distError > 0) {// Too close to the wall 
 	
 	    	WallFollowingLab.rightMotor.setSpeed(MOTOR_SPEED+100-50); 
-	    	WallFollowingLab.leftMotor.setSpeed(MOTOR_SPEED+5*(distError)); 
+	    	WallFollowingLab.leftMotor.setSpeed(MOTOR_SPEED+5*Math.abs((distError))); 
 	    	WallFollowingLab.rightMotor.forward(); 
 	    	WallFollowingLab.leftMotor.forward();}
 	    else if (distError < 0) { //too far
 	    	
-	    	WallFollowingLab.rightMotor.setSpeed(MOTOR_SPEED+100+30+5*(distError)); 
-	    	WallFollowingLab.leftMotor.setSpeed(MOTOR_SPEED-7*(distError)); 
+	    	WallFollowingLab.rightMotor.setSpeed(MOTOR_SPEED+100+30); 
+	    	WallFollowingLab.leftMotor.setSpeed(MOTOR_SPEED-5*(Math.abs(distError))); 
 	    	WallFollowingLab.rightMotor.forward(); 
 	    	WallFollowingLab.leftMotor.forward();} 
 	    //Thread.sleep(50);//  Allow other threads to get CPU
