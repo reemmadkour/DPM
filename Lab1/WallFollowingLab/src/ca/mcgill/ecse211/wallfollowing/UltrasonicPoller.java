@@ -34,7 +34,7 @@ public class UltrasonicPoller extends Thread {
       if (distance>2000){continue;}
       cont.processUSData(distance); // now take action depending on value
       try {
-        Thread.sleep(50);
+        Thread.sleep(40);
       } catch (Exception e) {
       } // Poor man's timed sampling
     }

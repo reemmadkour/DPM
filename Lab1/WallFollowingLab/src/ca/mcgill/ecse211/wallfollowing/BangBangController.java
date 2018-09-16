@@ -22,8 +22,11 @@ public class BangBangController implements UltrasonicController {
 
   @Override
   public void processUSData(int distance) {
+	  
+	  
     this.distance = distance;
     int distError=bandCenter-distance;// Compute error 
+    //if (distance>2000){}
     if (distance>2000) {
     WallFollowingLab.leftMotor.setSpeed(40);// Start moving forward 
 	WallFollowingLab.rightMotor.setSpeed(75); 
@@ -42,12 +45,12 @@ public class BangBangController implements UltrasonicController {
     		WallFollowingLab.leftMotor.backward(); 
     		WallFollowingLab.rightMotor.backward();}**/
     	WallFollowingLab.rightMotor.setSpeed(motorHigh+100-50); 
-    	WallFollowingLab.leftMotor.setSpeed(motorHigh+motorLow+90); 
+    	WallFollowingLab.leftMotor.setSpeed(motorHigh+motorLow+90+15); 
     	WallFollowingLab.rightMotor.forward(); 
     	WallFollowingLab.leftMotor.forward();}
     else if (distError < 0) { //too far
     	
-    	WallFollowingLab.rightMotor.setSpeed(motorHigh+100+30); 
+    	WallFollowingLab.rightMotor.setSpeed(motorHigh+100+20); 
     	WallFollowingLab.leftMotor.setSpeed(motorHigh-motorLow); 
     	WallFollowingLab.rightMotor.forward(); 
     	WallFollowingLab.leftMotor.forward();} 
