@@ -18,7 +18,7 @@ public class OdometryCorrection implements Runnable {
 	private SampleProvider ColorID;
 	private int countx=0;
 	private int county=0;
-	private static final double TILE_SIZE = 30.48;
+	private static final double TILE = 30.48;
 	
 	
   /**
@@ -51,18 +51,18 @@ public class OdometryCorrection implements Runnable {
   // run method (required for Thread)
   public void run() {
     long correctionStart, correctionEnd;
-    int passedLines = 0, linesY = 0, linesX = 0;
+    int totalLines = 0, yLines = 0, xLines = 0;
 
 	// Store previously stored values
-	double origX = -TILE_SIZE / 2, origY = -TILE_SIZE / 2, origTh = 0;
+	double origX = -TILE / 2, origY = -TILE / 2, origTh = 0;
     while (true) {
     	correctionStart = System.currentTimeMillis();
 		ColorID.fetchSample(csData, 0);
 		float intensity = csData[0]; //last value sent by sensor
       if (intensity<0.3) {
-    	  double data[] = null;
+    	  double measurements[] = null;
 			try {
-				data = Odometer.getOdometer().getXYT();
+				measurements = Odometer.getOdometer().getXYT();
 			} catch (OdometerExceptions e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -75,80 +75,78 @@ public class OdometryCorrection implements Runnable {
 			// Check if robot has started moving (to avoid false color sensor positives)
 
 			// Increment when line passed
-			passedLines++;
-			String print = "Lines passed: " + passedLines;
+			totalLines++;
+			String print = "Lines passed: " + totalLines;
 			LCD.drawString(print, 0, 4);
-			// Print passed lines
-			//String print = "Lines passed: " + passedLines;
-			//LCD.drawString(print, 0, 4);
+		
 
 			// If moving up Y axis
-			if (data[2] > 345 || data[2] < 15) {
+			if (measurements[2] > 345 || measurements[2] < 15) {
 				// Increment number of lines perpendicular to Y-axis (lines crossed when going across Y-axis)
-				linesY++;
+				yLines++;
 				origTh = 0;
 				// If first line, set Y to 0
-				if (passedLines == 1) {
+				if (totalLines == 1) {
 					origY = 0;
 				// Else increment tile size
 				} else {
-					origY += TILE_SIZE;
+					origY += TILE;
 				}
 				// update only y on odometer
-				odometer.setXYT(data[0], origY, origTh);
+				odometer.setXYT(measurements[0], origY, origTh);
 			
 			// If moving up X axis
-			} else if (data[2] > 75 && data[2] < 105) {
+			} else if (measurements[2] > 75 && measurements[2] < 105) {
 				// Increment nummber of lines perpendicular to X-axis (lines crossed when going across X-axis)
-				linesX++;
+				xLines++;
 				origTh = 90;
 				// If first line of X-axis passed set X to 0
-				if (data[0] < 15) {
+				if (measurements[0] < 15) {
 					origX = 0;
 				// Otherwise increment tile size
 				} else {
-					origX += TILE_SIZE;
+					origX += TILE;
 				}
 				// Update odometer for just X
-				odometer.setXYT(origX, data[1], origTh);
+				odometer.setXYT(origX, measurements[1], origTh);
 
 				
 				
 				
 				
 			// If moving down Y axis
-			} else if (data[2] > 165 && data[2] < 195) {
+			} else if (measurements[2] > 165 && measurements[2] < 195) {
 				origTh = 180;
 				// If first line down Y-axis, do nothing (set the origY as the Y coordinate)
-				if (data[1] > origY) {
+				if (measurements[1] > origY) {
 
 				// If not first line, decrement tile size
-				} else if (linesY > 1) {
-					origY -= TILE_SIZE;
+				} else if (yLines > 1) {
+					origY -= TILE;
 				
 				} else {
 				// If last line, set to zero
 					origY = 0;
 				}
-				linesY--;
-				odometer.setXYT(data[0], origY, origTh);
+				yLines--;
+				odometer.setXYT(measurements[0], origY, origTh);
 			
 			// If moving down X axis
-			} else if (data[2] > 255 && data[2] < 285) {
+			} else if (measurements[2] > 255 && measurements[2] < 285) {
 				origTh = 270;
 				
 				// If first line down X-axis, do nothing (set the origX as the X-coordinate)
-				if (data[0] > origX) {
-
+				if (measurements[0] >= origX) {
+					//xLines--;
 				// If not first line, decrement tile size
-				} else if (linesX > 1) {
-					origX -= TILE_SIZE;
+				} else if (xLines > 1) {
+					origX -= TILE;
 				// If last line, set to zero
 				} else {
 					origX = 0;
 				}
-				linesX--;
-				odometer.setXYT(origX, data[1], origTh);
+				xLines--;
+				odometer.setXYT(origX, measurements[1], origTh);
 			}
 		
 
