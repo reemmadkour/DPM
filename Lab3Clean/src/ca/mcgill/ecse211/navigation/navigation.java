@@ -9,6 +9,12 @@ import ca.mcgill.ecse211.odometer.*;
 
 import lejos.hardware.Button;
 
+/**creates a class to start the navigation
+ * @author reem madkour and usaid barlas
+ 
+ */
+
+
 public class navigation implements Runnable {
 
 	private EV3LargeRegulatedMotor leftMotor;
@@ -21,14 +27,20 @@ public class navigation implements Runnable {
 	public static final double TILE_SIZE=30.48;;
 	public static final int FORWARD_SPEED = 250;
 	private static final int ROTATE_SPEED = 150;
-	double currentT, currentY, currentX;
+
 	double dx, dy, dt;
-	double distanceToTravel;
+
 	int i = 0;
 	private Odometer odometer;
 	private OdometerData odoData;
 
-		//array list for points
+	
+	/** creates an instance of the navigation class
+	 * @param leftmotor, rightmotor: motors passed from the lab2 class
+	 * @param TRACK is the distance between the wheels
+	 * @param WHEEL_RAD is the radius of the wheel
+	 *
+	 */
 		public navigation(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor,
 				final double TRACK, final double WHEEL_RAD) throws OdometerExceptions { // constructor
 			this.odometer = Odometer.getOdometer();
@@ -45,7 +57,9 @@ public class navigation implements Runnable {
 			// returned
 		}
 
-		// run method (required for Thread)
+		/** runs the navigattion thread. inistializes the way points and loops through them.
+		 
+		 */
 		public void run() {
 			for (EV3LargeRegulatedMotor motor : new EV3LargeRegulatedMotor[] {leftMotor, rightMotor}) {
 				motor.stop();
@@ -69,57 +83,72 @@ public class navigation implements Runnable {
 				i++;
 			}
 		}
-		private static double prevAngle = 0;
+		private static double odoAngle = 0;
+		/**
+		 * @param x :  waypoint x coordinate
+		 * @param y:   waypoint y coordinate
+		 * @param obs:boolean for i we are avoiding an obstacle or not
+		 */
 		void travelTo(double x, double y,boolean obs) {
-			double absAngle = 0, len = 0, deltaX = 0, deltaY = 0;
+			double calcTheta = 0, len = 0, deltaX = 0, deltaY = 0;
 
 	
-			prevAngle = odometer.getXYT()[2];
+			odoAngle = odometer.getXYT()[2];
 
 			deltaX = x*TILE_SIZE- odometer.getXYT()[0];;
 			deltaY = y*TILE_SIZE - odometer.getXYT()[1];
-			distanceToTravel = Math.sqrt(dx*dx+dy*dy);len = Math.hypot(Math.abs(deltaX), Math.abs(deltaY));
+		
+			len = Math.hypot(Math.abs(deltaX), Math.abs(deltaY));
 
-			// Get absolute angle the robot must be facing
-			absAngle = Math.toDegrees(Math.atan2(deltaX, deltaY));
+			//get angle up to 180
+			calcTheta = Math.toDegrees(Math.atan2(deltaX, deltaY));
 
-			// If the value of absolute angle is negative, loop it back
-			if (absAngle < 0)
-				absAngle = 360 - Math.abs(absAngle);
+			//if result is negative subtract it from 360 to get the positive
+			if (calcTheta < 0)
+				calcTheta = 360 - Math.abs(calcTheta);
 
-			// Make robot turn to the absolute angle
-			turnTo(absAngle);
+			// turn to the found angle
+			turnTo(calcTheta);
 		
 
-			// drive forward required distance
+			// go
 			leftMotor.setSpeed(FORWARD_SPEED);
 			rightMotor.setSpeed(FORWARD_SPEED);
 			leftMotor.rotate(convertDistance(WHEEL_RAD, len), true);
 			rightMotor.rotate(convertDistance(WHEEL_RAD, len), true);
 
-			while(isNavigating()) { //avoiding the obstacles
+			while(isNavigating()) { //for avoiding the obstacle
+				//get sensor readings
 				usDistance.fetchSample(usData,0);
 				float distance = usData[0]*100;
 				if(distance<= 15) {
 					
 				
 					if(odometer.getXYT()[0]<2.4*30.48&&odometer.getXYT()[0]>1.3*30.48&&odometer.getXYT()[1]<2.5*30.48&&odometer.getXYT()[1]>1.6*30.48){
-						leftMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, 90), true);  // turn when facing obstacle and travel a certain distance and then turn again 
-						rightMotor.rotate(convertAngle(WHEEL_RAD, TRACK, 90), false);// then travel a certain distance
+						//travel in a square around the obstacle when to left
+						leftMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, 90), true);  
+						rightMotor.rotate(convertAngle(WHEEL_RAD, TRACK, 90), false);
+						
 						leftMotor.rotate(convertDistance(WHEEL_RAD, 40), true);
 						rightMotor.rotate(convertDistance(WHEEL_RAD, 40), false);
+						
 						leftMotor.rotate(convertAngle(WHEEL_RAD, TRACK, 90), true);
 						rightMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, 90), false);
+						
 						leftMotor.rotate(convertDistance(WHEEL_RAD, 45), true);
 						rightMotor.rotate(convertDistance(WHEEL_RAD, 45), false);
 					}
 					else {
-					leftMotor.rotate(convertAngle(WHEEL_RAD, TRACK, 90), true);  // turn when facing obstacle and travel a certain distance and then turn again 
-					rightMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, 90), false);// then travel a certain distance
+						////travel in a square around the obstacle when to right
+					leftMotor.rotate(convertAngle(WHEEL_RAD, TRACK, 90), true);  
+					rightMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, 90), false);
+					
 					leftMotor.rotate(convertDistance(WHEEL_RAD, 40), true);
 					rightMotor.rotate(convertDistance(WHEEL_RAD, 40), false);
+					
 					leftMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, 90), true);
 					rightMotor.rotate(convertAngle(WHEEL_RAD, TRACK, 90), false);
+					
 					leftMotor.rotate(convertDistance(WHEEL_RAD, 45), true);
 					rightMotor.rotate(convertDistance(WHEEL_RAD, 45), false);
 					}
@@ -127,18 +156,22 @@ public class navigation implements Runnable {
 				}
 			}
 		}
+		
+		/** changes heading of the robot to the given angle
+		 * @param theta : angle needed to turn to
+		 */
 		void turnTo(double theta) {
-			boolean turnLeft = false;
+			boolean turnLeft = false; //to do the minimal turn
 			double deltaAngle = 0;
-			// Get change in angle we want
-			deltaAngle = theta - prevAngle;
+			// get the delta nagle
+			deltaAngle = theta - odoAngle;
 
-			// If deltaAngle is negative, loop it back
+			// if the delta angle is negative find the equivalent positive
 			if (deltaAngle < 0) {
 				deltaAngle = 360 - Math.abs(deltaAngle);
 			}
 
-			// Check if we want to move left or right
+			// Check if angle is the minimal or not
 			if (deltaAngle > 180) {
 				turnLeft = true;
 				deltaAngle = 360 - Math.abs(deltaAngle);
@@ -146,11 +179,11 @@ public class navigation implements Runnable {
 				turnLeft = false;
 			}
 
-			// Set slower rotate speed
+			// set to rotation speed
 			leftMotor.setSpeed(ROTATE_SPEED);
 			rightMotor.setSpeed(ROTATE_SPEED);
 
-			// Turn motors according to which direction we want to turn in
+			//turn robot to direction we chose
 			if (turnLeft) {
 				leftMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, deltaAngle), true);
 				rightMotor.rotate(convertAngle(WHEEL_RAD, TRACK, deltaAngle), false);
@@ -168,10 +201,22 @@ public class navigation implements Runnable {
 				return false;
 
 		}
-
+		
+		/**gives the angle you need  the wheels to roate by to cover a certain arc length (distance)
+		 * @param radius: radius of wheel
+		 * @param distance: distance you want the robot to travel 
+		 *@return: angle for rotate
+		 */
 		private static int convertDistance(double radius, double distance) {
 			return (int) ((180.0 * distance) / (Math.PI * radius));
 		}
+		
+		/**gives the angle you need  the wheels to rotate by to head a certain direction
+		 *@param radius: radius of wheel
+		 *@param width: distance between wheels
+		 *@param angle : required heading
+		 *@return: angle for rotate
+		 */
 		private static int convertAngle(double radius, double width, double angle) {
 			return convertDistance(radius, Math.PI * width * angle / 360.0);
 		}

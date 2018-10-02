@@ -14,34 +14,34 @@ import lejos.hardware.sensor.SensorModes;
 import lejos.robotics.SampleProvider;
 
 public class lab3 {
-public static boolean obstacle= false;
-  // Motor Objects, and Robot related parameters
+public static boolean obstacle= false; //initializing the boolean reflecting if the user is running with an obstacle or not
+  // initializing mototrs and dimensions
   private static final EV3LargeRegulatedMotor leftMotor =
       new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
   private static final EV3LargeRegulatedMotor rightMotor =
       new EV3LargeRegulatedMotor(LocalEV3.get().getPort("D"));
   private static final TextLCD lcd = LocalEV3.get().getTextLCD();
-  public static final double WHEEL_RAD = 2.15;
-  public static final double TRACK = 12.6;
+  public static final double WHEEL_RAD = 2.13;
+  public static final double TRACK = 12;
 
   public static void main(String[] args) throws OdometerExceptions {
+ 
+    int buttonChoice; //initialize button variable.
 
-    int buttonChoice;
-
-    // Odometer related objects
+    // initialize odometer objects 
     Odometer odometer = Odometer.getOdometer(leftMotor, rightMotor, TRACK, WHEEL_RAD); 
     //ObstacleAvoidance obstacleAvoidance = new ObstacleAvoidance(); 
     Display odometryDisplay = new Display(lcd); 
     navigation navigation = new navigation(leftMotor,rightMotor,TRACK,WHEEL_RAD);
-    //ObstacleAvoidance obstacleavoidance = new ObstacleAvoidance(leftMotor, rightMotor, TRACK, WHEEL_RAD);
+   
     do {
-        // clear the display
+        
     
 
      
           lcd.clear();
 
-          // ask the user whether the motors should drive in a square or float
+          // obstacle or no obstacle 
           lcd.drawString("< Left  | Right >", 0, 0);
           lcd.drawString("  No    | with   ", 0, 1);
           lcd.drawString("  obs - | obs-   ", 0, 2);
@@ -50,7 +50,7 @@ public static boolean obstacle= false;
           
           buttonChoice = Button.waitForAnyPress();
     }while (buttonChoice != Button.ID_LEFT && buttonChoice != Button.ID_RIGHT);
-       // Start odometer and display threads
+       // Start threads
           Thread odoThread = new Thread(odometer);
           odoThread.start();
           Thread odoDisplayThread = new Thread(odometryDisplay);
@@ -63,7 +63,7 @@ public static boolean obstacle= false;
           if(buttonChoice == Button.ID_RIGHT){
         	  lab3.obstacle=true;
         	 navigation.run();
-        	// run the obstacleAvoidance
+      
           }
         
 
